@@ -12,7 +12,7 @@ There is not time limitation but we suggest you to not spend more than a few hou
 
 Check out a simplified version of our [Surveys API](http://docs.surveysmock.apiary.io/)
 
-There you should find examples of how to call each of the methods:
+There you should find examples of how to call each of the methods, for example:
 
     curl --include  "http://surveysmock.apiary.io/api/surveys/001"
     
