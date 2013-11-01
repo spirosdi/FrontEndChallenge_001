@@ -4,7 +4,7 @@ It's not everything about CV, titles and portfolio. The most important for us is
 
 In order to understand all this we offer you the following challenge. This is a simplified but illustrative case of the kind of situations we have to deal with in our daily basics.
 
-There is not time limitation but we suggest you to not spend more than a few hours on it. We are not looking for a bullet-proof solution we just want what it would be the first iteration, the first prototype version, the most basic implementation that "gets the thing done", use high level frameworks/libraries only if it makes sense for you.
+There is not time limitation but we suggest you to not spend more than a few hours on it. We are not looking for a bullet-proof solution we just want what it would be the first iteration, the first prototype version, the proof of concept, the most basic implementation that "gets the thing done".
 
 ## Challenge Description
 
