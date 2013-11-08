@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>FrontEnd Challenge 001</title>
+    <meta name="author" content="Spiros Dimopulos - spiros.dimopulos@gmail.com">
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <style>
+        .surveyTitle {
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+<!--Simple containers that we fill in/show/hide as user moves from step to step-->
+<div id="loadingIndicator">loading...</div>
+<h1 id="sectionTitle"></h1>
+<h2 id="sectionSubtitle"></h2>
+<div id="allSurveys">
+    <ul id="listSurveys">
+
+    </ul>
+</div>
+<div id="oneSurvey" style="display:none">
+    <div id="questionsContainer">
+    </div>
+    <div id="successMessage" style="display:none">Thanks for answering the survey!</div>
+    <input style="display:none" type='button' id='backToStart' value='do it again!' />
+
+</div>
+
+<script>
+    $(document).ready(function () {
+        backToStart();
+        /*
+         * backToStart function initializes all sections
+         * */
+        function backToStart() {
+            // bring DOM elements to initial state
+            $('#loadingIndicator').show();
+            $('#allSurveys').show();
+            $("#successMessage").hide();
+            $("#backToStart").hide();
+            $("#sectionTitle, #sectionSubtitle, #listSurveys, #questionsContainer").html("");
+            /*
+             * make an API call
+             * to the /surveys to fetch all surveys
+             * */
+            $.get("http://surveysmock.apiary.io/api/surveys")
+                    .done(function (data) {
+                        /*
+                         * When the call returns then we append li elements
+                         * to the listSurveys ul with content from the data.surveys
+                         * objects array
+                         * */
+                        $.each(data.surveys, function () {
+                            // hide loading indicator
+                            $('#loadingIndicator').hide();
+                            $('#sectionTitle').text("All Surveys");
+                            $('#sectionSubtitle').text("Select a Survey to begin");
+                            $("#listSurveys").append("<li class='surveyTitle' id='" + this.id + "'>" + this.title + " - " + this.tagline + "</li>");
+                        });
+                        /*
+                         When all surveyTitles are loaded then we bind to each one a click event
+                         to load the specific content of the specific Survey
+                         */
+                        $('.surveyTitle').unbind();
+                        $('.surveyTitle').click(function () {
+                            // first we hide the previous elements
+                            $('#allSurveys, #sectionTitle, #sectionSubtitle').hide();
+                            // we show the loadingIndicator
+                            $('#loadingIndicator').show();
+                            /*
+                             * store the survey id as var as is needed in a next step
+                             * */
+                            var surveyId = this.id;
+                            // we make the API call to get the details of the Specific Survey
+                            $.get("http://surveysmock.apiary.io/api/surveys/" + this.id)
+                                    .done(function (data) {
+                                        /*
+                                         * When the call returns then we append li elements
+                                         * to the questionsContainer ul with content from the data.questions
+                                         * objects array
+                                         * */
+                                        // hide loading indicator
+                                        $('#loadingIndicator').hide();
+                                        // show DOM elements needed and fill in accordingly
+                                        $('#sectionTitle, #sectionSubtitle, #oneSurvey').show();
+                                        $("#questionsContainer").show();
+                                        $('#sectionTitle').text(data.survey.title);
+                                        $('#sectionSubtitle').text(data.survey.tagline);
+                                        // then for each questions we append elements to questionsContainer
+                                        $.each(data.survey.questions, function () {
+                                            var questionId = this.id;
+                                            $("#questionsContainer").append("<div class='surveyQuestion' id='" + this.id + "'></div>");
+                                            $("#" + questionId).append("<h4>" + this.title + "</h4>");
+                                            $.each(this.options, function (index, value) {
+                                                $("#" + questionId).append("<input class='surveyAnswer' type='radio' name='" + questionId + "' value='" + value + "'>" + value + "<br>");
+                                            });
+                                        });
+                                        // in the end we append a submit button
+                                        $("#questionsContainer").append("<center><input width='200' type='submit' value='done!' id='submitButton'/></center>");
+                                        // bind to submit button click event a POST call to /api/surveys/{survey_id}/completions
+                                        $("#submitButton").unbind();
+                                        $("#submitButton").click(function () {
+                                            //form a json Array with values submitted to post
+                                            var answersJson = {};
+                                            var completion = [];
+                                            answersJson.completion = completion;
+                                            $(".surveyAnswer:checked").each(function () {
+                                                var answer = {
+                                                    "question_id": this.name,
+                                                    "value": this.value
+                                                };
+                                                completion.push(answer);
+                                            });
+                                            //make a post call with data as submitted
+                                            $.post("http://surveysmock.apiary.io/api/surveys/" + surveyId + "/completions", answersJson)
+                                                    .done(function () {
+                                                        $("#questionsContainer").hide();
+                                                        $("#successMessage").show();
+                                                        $("#backToStart").show();
+                                                        // bind click event to backToStart button
+                                                        $("#backToStart").unbind();
+                                                        $("#backToStart").click(function () {
+
+                                                            backToStart();
+                                                        })
+                                                    })
+                                                // fail handler of /api/surveys/{survey_id}/completions call
+                                                    .fail(function () {
+                                                        alert("Please try again later");
+                                                    });
+                                        });
+                                    })
+                                // fail handler of api/surveys/{id} call
+                                    .fail(function () {
+                                        alert("Please try again later");
+                                    });
+                        })
+                    })
+                // fail handler of /api/surveys/{id} call
+                    .fail(function () {
+                        alert("Please try again later");
+                    });
+        }
+    })
+</script>
+</body>
+
+</html>
