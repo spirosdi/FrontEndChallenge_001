@@ -6,28 +6,39 @@
     <meta name="author" content="Spiros Dimopulos - spiros.dimopulos@gmail.com">
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
     <style>
-        .surveyTitle {
+        .surveyTitle, label {
             cursor: pointer;
+        }
+        .surveyTitle:hover, label:hover {
+            color: blue;
         }
     </style>
 </head>
 
 <body>
-<!--Simple containers that we fill in/show/hide as user moves from step to step-->
+<!-- Simple containers that we fill in/show/hide as user moves from step to step -->
 <div id="loadingIndicator">loading...</div>
+
 <h1 id="sectionTitle"></h1>
 <h2 id="sectionSubtitle"></h2>
-<div id="allSurveys">
-    <ul id="listSurveys">
 
+<!-- Section 1 container, here the user sees all the available surveys -->
+<div class="sectionContainer" id="allSurveys">
+    <ul id="listSurveys">
     </ul>
 </div>
-<div id="oneSurvey" style="display:none">
+
+<!-- Section 2 container, here the user can complete the questions of the clicked survey -->
+<div class="sectionContainer" id="oneSurvey" style="display:none">
     <div id="questionsContainer">
     </div>
-    <div id="successMessage" style="display:none">Thanks for answering the survey!</div>
-    <input style="display:none" type='button' id='backToStart' value='do it again!' />
+    <input width='200' type='submit' value='done!' id='submitButton'/>
+</div>
 
+<!-- Section 3 container, a message is shown to the User: "Thanks for answering the survey!", from here user can go back to Section 1 -->
+<div class="sectionContainer" id="successSection" style="display: none">
+    <div id="successMessage">Thanks for answering the survey!</div>
+    <input type='button' id='backToStart' value='do it again!' />
 </div>
 
 <script>
@@ -38,10 +49,8 @@
          * */
         function backToStart() {
             // bring DOM elements to initial state
-            $('#loadingIndicator').show();
-            $('#allSurveys').show();
-            $("#successMessage").hide();
-            $("#backToStart").hide();
+            $('#loadingIndicator, #allSurveys, #sectionTitle, #sectionSubtitle').show();
+            $('#oneSurvey, #successSection').hide();
             $("#sectionTitle, #sectionSubtitle, #listSurveys, #questionsContainer").html("");
             /*
              * make an API call
@@ -57,8 +66,10 @@
                         $.each(data.surveys, function () {
                             // hide loading indicator
                             $('#loadingIndicator').hide();
+                            // update sectionTitle and sectionSubtitle text
                             $('#sectionTitle').text("All Surveys");
                             $('#sectionSubtitle').text("Select a Survey to begin");
+                            // populate "start Survey" options
                             $("#listSurveys").append("<li class='surveyTitle' id='" + this.id + "'>" + this.title + " - " + this.tagline + "</li>");
                         });
                         /*
@@ -71,9 +82,7 @@
                             $('#allSurveys, #sectionTitle, #sectionSubtitle').hide();
                             // we show the loadingIndicator
                             $('#loadingIndicator').show();
-                            /*
-                             * store the survey id as var as is needed in a next step
-                             * */
+                            // store the survey id as var as is needed in a next step
                             var surveyId = this.id;
                             // we make the API call to get the details of the Specific Survey
                             $.get("http://surveysmock.apiary.io/api/surveys/" + this.id)
@@ -86,8 +95,8 @@
                                         // hide loading indicator
                                         $('#loadingIndicator').hide();
                                         // show DOM elements needed and fill in accordingly
-                                        $('#sectionTitle, #sectionSubtitle, #oneSurvey').show();
-                                        $("#questionsContainer").show();
+                                        $('#sectionTitle, #sectionSubtitle, #oneSurvey, #questionsContainer').show();
+                                        // update sectionTitle and sectionSubtitle text
                                         $('#sectionTitle').text(data.survey.title);
                                         $('#sectionSubtitle').text(data.survey.tagline);
                                         // then for each questions we append elements to questionsContainer
@@ -96,15 +105,18 @@
                                             $("#questionsContainer").append("<div class='surveyQuestion' id='" + this.id + "'></div>");
                                             $("#" + questionId).append("<h4>" + this.title + "</h4>");
                                             $.each(this.options, function (index, value) {
-                                                $("#" + questionId).append("<input class='surveyAnswer' type='radio' name='" + questionId + "' value='" + value + "'>" + value + "<br>");
+                                                $("#" + questionId).append("<input class='surveyAnswer' type='radio' id='"+ questionId+value.replace(/\s+/g, '') +"' name='" + questionId + "' value='" + value + "'>" +
+                                                     "<label for='"+ questionId+value.replace(/\s+/g, '') +"'>"+ value + "<br>");
                                             });
                                         });
-                                        // in the end we append a submit button
-                                        $("#questionsContainer").append("<center><input width='200' type='submit' value='done!' id='submitButton'/></center>");
                                         // bind to submit button click event a POST call to /api/surveys/{survey_id}/completions
                                         $("#submitButton").unbind();
                                         $("#submitButton").click(function () {
-                                            //form a json Array with values submitted to post
+                                            // hide oneSurvey section, sectionTitle, sectionSubtitle
+                                            $("#oneSurvey, #sectionTitle, #sectionSubtitle").hide();
+                                            // show loading indicator
+                                            $("#loadingIndicator").show();
+                                            // form a json Array with values submitted to post
                                             var answersJson = {};
                                             var completion = [];
                                             answersJson.completion = completion;
@@ -115,16 +127,16 @@
                                                 };
                                                 completion.push(answer);
                                             });
-                                            //make a post call with data as submitted
+                                            // make a post call with data as submitted
                                             $.post("http://surveysmock.apiary.io/api/surveys/" + surveyId + "/completions", answersJson)
                                                     .done(function () {
-                                                        $("#questionsContainer").hide();
-                                                        $("#successMessage").show();
-                                                        $("#backToStart").show();
+                                                        // hide loading indicator
+                                                        $("#loadingIndicator").hide();
+                                                        // show successSection
+                                                        $("#successSection").show();
                                                         // bind click event to backToStart button
                                                         $("#backToStart").unbind();
                                                         $("#backToStart").click(function () {
-
                                                             backToStart();
                                                         })
                                                     })
